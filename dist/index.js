@@ -7,7 +7,16 @@ function handlerReadiness(req, res) {
     });
     res.status(200).send("OK");
 }
+function middlewareLogResponses(req, res, next) {
+    res.on("finish", () => {
+        if (res.statusCode < 200 || res.statusCode >= 300) {
+            console.log(`[NON-OK] ${req.method} ${req.url} - Status: ${res.statusCode}`);
+        }
+    });
+    next();
+}
 app.use("/app", express.static("./src/app"));
+app.use(middlewareLogResponses);
 app.get("/healthz", handlerReadiness);
 app.listen(PORT, () => {
     console.log(`Server is running at http://localhost:${PORT}`);
