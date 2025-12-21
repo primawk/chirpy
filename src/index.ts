@@ -52,9 +52,9 @@ function middlewareMetricsInc(req: Request, res: Response, next: NextFunction) {
 app.use("/app", middlewareMetricsInc, express.static("./src/app"));
 app.use(middlewareLogResponses);
 
-app.get("/healthz", handlerReadiness);
-app.get("/metrics", handlerReqCounter);
-app.get("/reset", handlerResetCounter);
+app.get("/api/healthz", handlerReadiness);
+app.get("/api/metrics", handlerReqCounter);
+app.get("/api/reset", handlerResetCounter);
 
 app.listen(PORT, () => {
   console.log(`Server is running at http://localhost:${PORT}`);
