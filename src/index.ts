@@ -5,6 +5,15 @@ import { config } from "./config.js";
 const app = express();
 const PORT = 8080;
 
+app.use(express.json());
+app.use("/app", middlewareMetricsInc, express.static("./src/app"));
+app.use(middlewareLogResponses);
+
+app.get("/api/healthz", handlerReadiness);
+app.get("/admin/metrics", handlerReqCounter);
+app.post("/admin/reset", handlerResetCounter);
+app.post("/api/validate_chirp", handlerValidate);
+
 function handlerReadiness(req: Request, res: Response) {
   res.set({
     "Content-Type": "text/plain;charset=utf-8",
@@ -53,12 +62,44 @@ function middlewareMetricsInc(req: Request, res: Response, next: NextFunction) {
   next();
 }
 
-app.use("/app", middlewareMetricsInc, express.static("./src/app"));
-app.use(middlewareLogResponses);
+function handlerValidate(req: Request, res: Response) {
+  type ResponseData = {
+    body: string;
+  };
 
-app.get("/api/healthz", handlerReadiness);
-app.get("/admin/metrics", handlerReqCounter);
-app.get("/admin/reset", handlerResetCounter);
+  function censorText(input: string, restrictedWords: string[]) {
+    let result = input;
+
+    for (const word of restrictedWords) {
+      const regex = new RegExp(`\\b${word}\\b`, "gi");
+      result = result.replace(regex, "****");
+    }
+
+    return result;
+  }
+
+  try {
+    const parsedBody: ResponseData = req.body;
+
+    if (parsedBody?.body?.length > 140) {
+      res.status(400).send({
+        error: "Chirp is too long",
+      });
+    } else {
+      res.status(200).send({
+        cleanedBody: censorText(parsedBody?.body, [
+          "kerfuffle",
+          "sharbert",
+          "fornax",
+        ]),
+      });
+    }
+  } catch (error) {
+    res.status(400).send({
+      error: "Something went wrong",
+    });
+  }
+}
 
 app.listen(PORT, () => {
   console.log(`Server is running at http://localhost:${PORT}`);
