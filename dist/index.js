@@ -21,7 +21,9 @@ app.use(errorHandler);
 function errorHandler(err, req, res, next) {
     console.log(`There is an error: ${err}`);
     if (err instanceof NotFoundError) {
-        res.status(404).send(err.message);
+        res.status(404).send({
+            error: err.message,
+        });
     }
     else if (err instanceof BadRequestError) {
         res.status(400).send({
@@ -29,10 +31,14 @@ function errorHandler(err, req, res, next) {
         });
     }
     else if (err instanceof UnauthorizedError) {
-        res.status(401).send(err.message);
+        res.status(401).send({
+            error: err.message,
+        });
     }
     else if (err instanceof ForbiddenError) {
-        res.status(403).send(err.message);
+        res.status(403).send({
+            error: err.message,
+        });
     }
     else {
         res.status(500).json({
