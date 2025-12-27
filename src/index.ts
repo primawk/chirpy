@@ -7,6 +7,12 @@ import {
   UnauthorizedError,
   ForbiddenError,
 } from "./errors.js";
+import postgres from "postgres";
+import { migrate } from "drizzle-orm/postgres-js/migrator";
+import { drizzle } from "drizzle-orm/postgres-js";
+
+const migrationClient = postgres(config.db.url, { max: 1 });
+await migrate(drizzle(migrationClient), config.db.migrationConfig);
 
 const app = express();
 const PORT = 8080;
@@ -72,16 +78,16 @@ function handlerReqCounter(req: Request, res: Response) {
   res
     .status(200)
     .send(
-      `<html><body><h1>Welcome, Chirpy Admin</h1><p>Chirpy has been visited ${config.fileserverHits} times!</p><body></html>`
+      `<html><body><h1>Welcome, Chirpy Admin</h1><p>Chirpy has been visited ${config.api.fileserverHits} times!</p><body></html>`
     );
 }
 
 function handlerResetCounter(req: Request, res: Response) {
-  config.fileserverHits = 0;
+  config.api.fileserverHits = 0;
   res.set({
     "Content-Type": "text/plain;charset=utf-8",
   });
-  res.status(200).send(`Hits: ${config.fileserverHits}`);
+  res.status(200).send(`Hits: ${config.api.fileserverHits}`);
 }
 
 async function handlerValidate(req: Request, res: Response) {
@@ -132,7 +138,7 @@ function middlewareLogResponses(
 
 function middlewareMetricsInc(req: Request, res: Response, next: NextFunction) {
   res.on("finish", () => {
-    config.fileserverHits++;
+    config.api.fileserverHits++;
   });
   next();
 }
