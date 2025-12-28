@@ -1,14 +1,5 @@
-import { loadEnvFile } from "node:process";
 import type { MigrationConfig } from "drizzle-orm/migrator";
-
-loadEnvFile();
-
-function envOrThrow(key: string) {
-  const value = process.env[key];
-
-  if (!value) throw Error("database url is missing.");
-  return value;
-}
+import { envOrThrow } from "./helpers.js";
 
 const databaseURL = envOrThrow("DB_URL");
 

@@ -10,6 +10,8 @@ import {
 import postgres from "postgres";
 import { migrate } from "drizzle-orm/postgres-js/migrator";
 import { drizzle } from "drizzle-orm/postgres-js";
+import { createUser, resetUsers } from "./db/queries/users.js";
+import { envOrForbidden } from "./helpers.js";
 
 const migrationClient = postgres(config.db.url, { max: 1 });
 await migrate(drizzle(migrationClient), config.db.migrationConfig);
@@ -23,10 +25,24 @@ app.use(middlewareLogResponses);
 
 app.get("/api/healthz", handlerReadiness);
 app.get("/admin/metrics", handlerReqCounter);
-app.post("/admin/reset", handlerResetCounter);
+app.post("/admin/reset", async (req, res, next) => {
+  try {
+    await handlerResetUsers(req, res);
+  } catch (error) {
+    next(error);
+  }
+});
 app.post("/api/validate_chirp", async (req, res, next) => {
   try {
     await handlerValidate(req, res);
+  } catch (error) {
+    next(error);
+  }
+});
+
+app.post("/api/users", async (req, res, next) => {
+  try {
+    await handlerCreateUser(req, res);
   } catch (error) {
     next(error);
   }
@@ -82,12 +98,10 @@ function handlerReqCounter(req: Request, res: Response) {
     );
 }
 
-function handlerResetCounter(req: Request, res: Response) {
-  config.api.fileserverHits = 0;
-  res.set({
-    "Content-Type": "text/plain;charset=utf-8",
-  });
-  res.status(200).send(`Hits: ${config.api.fileserverHits}`);
+async function handlerResetUsers(req: Request, res: Response) {
+  envOrForbidden("PLATFORM");
+  await resetUsers();
+  res.status(200).send("Users have been reset.");
 }
 
 async function handlerValidate(req: Request, res: Response) {
@@ -119,6 +133,26 @@ async function handlerValidate(req: Request, res: Response) {
       ]),
     });
   }
+}
+
+async function handlerCreateUser(req: Request, res: Response) {
+  type RequestData = {
+    email: string;
+  };
+
+  const parsedBody: RequestData = req.body;
+
+  if (!parsedBody?.email) {
+    throw new BadRequestError("Email is missing");
+  }
+
+  const response = await createUser(parsedBody);
+  res.status(201).send({
+    id: response.id,
+    createdAt: response.createdAt,
+    updatedAt: response.updatedAt,
+    email: response.email,
+  });
 }
 
 function middlewareLogResponses(
