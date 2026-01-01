@@ -12,6 +12,7 @@ import { migrate } from "drizzle-orm/postgres-js/migrator";
 import { drizzle } from "drizzle-orm/postgres-js";
 import { createUser, resetUsers } from "./db/queries/users.js";
 import { envOrForbidden } from "./helpers.js";
+import { createChirp } from "./db/queries/chirps.js";
 
 const migrationClient = postgres(config.db.url, { max: 1 });
 await migrate(drizzle(migrationClient), config.db.migrationConfig);
@@ -32,7 +33,7 @@ app.post("/admin/reset", async (req, res, next) => {
     next(error);
   }
 });
-app.post("/api/validate_chirp", async (req, res, next) => {
+app.post("/api/chirps", async (req, res, next) => {
   try {
     await handlerValidate(req, res);
   } catch (error) {
@@ -105,33 +106,22 @@ async function handlerResetUsers(req: Request, res: Response) {
 }
 
 async function handlerValidate(req: Request, res: Response) {
-  type ResponseData = {
+  type ReqData = {
     body: string;
+    userId: string;
   };
 
-  function censorText(input: string, restrictedWords: string[]) {
-    let result = input;
-
-    for (const word of restrictedWords) {
-      const regex = new RegExp(`\\b${word}\\b`, "gi");
-      result = result.replace(regex, "****");
-    }
-
-    return result;
-  }
-
-  const parsedBody: ResponseData = req.body;
+  const parsedBody: ReqData = req.body;
 
   if (parsedBody?.body?.length > 140) {
     throw new BadRequestError("Chirp is too long. Max length is 140");
   } else {
-    res.status(200).send({
-      cleanedBody: censorText(parsedBody?.body, [
-        "kerfuffle",
-        "sharbert",
-        "fornax",
-      ]),
-    });
+    const response = await createChirp(parsedBody);
+    if (response) {
+      res.status(201).send(response);
+    } else {
+      throw new Error("Failed to create the chirp.");
+    }
   }
 }
 
