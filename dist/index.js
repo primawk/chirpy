@@ -6,7 +6,7 @@ import { migrate } from "drizzle-orm/postgres-js/migrator";
 import { drizzle } from "drizzle-orm/postgres-js";
 import { createUser, resetUsers } from "./db/queries/users.js";
 import { envOrForbidden } from "./helpers.js";
-import { createChirp } from "./db/queries/chirps.js";
+import { createChirp, getAllChirps, getChirpById, } from "./db/queries/chirps.js";
 const migrationClient = postgres(config.db.url, { max: 1 });
 await migrate(drizzle(migrationClient), config.db.migrationConfig);
 const app = express();
@@ -19,6 +19,22 @@ app.get("/admin/metrics", handlerReqCounter);
 app.post("/admin/reset", async (req, res, next) => {
     try {
         await handlerResetUsers(req, res);
+    }
+    catch (error) {
+        next(error);
+    }
+});
+app.get("/api/chirps", async (req, res, next) => {
+    try {
+        await handlerGetAllChirps(req, res);
+    }
+    catch (error) {
+        next(error);
+    }
+});
+app.get("/api/chirps/:chirpID", async (req, res, next) => {
+    try {
+        await handlerGetChirpById(req, res);
     }
     catch (error) {
         next(error);
@@ -101,6 +117,24 @@ async function handlerValidate(req, res) {
         else {
             throw new Error("Failed to create the chirp.");
         }
+    }
+}
+async function handlerGetAllChirps(req, res) {
+    const response = await getAllChirps();
+    if (response) {
+        res.status(200).send(response);
+    }
+    else {
+        throw new Error("Failed to get the chirps.");
+    }
+}
+async function handlerGetChirpById(req, res) {
+    const response = await getChirpById(req.params.chirpID);
+    if (response) {
+        res.status(200).send(response);
+    }
+    else {
+        throw new NotFoundError("Failed to get the chirp.");
     }
 }
 async function handlerCreateUser(req, res) {
