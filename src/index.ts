@@ -10,13 +10,15 @@ import {
 import postgres from "postgres";
 import { migrate } from "drizzle-orm/postgres-js/migrator";
 import { drizzle } from "drizzle-orm/postgres-js";
-import { createUser, resetUsers } from "./db/queries/users.js";
+import { createUser, getUser, resetUsers } from "./db/queries/users.js";
 import { envOrForbidden } from "./helpers.js";
 import {
   createChirp,
   getAllChirps,
   getChirpById,
 } from "./db/queries/chirps.js";
+import { checkPasswordHash, hashPassword } from "./auth.js";
+import { NewUser } from "./db/schema.js";
 
 const migrationClient = postgres(config.db.url, { max: 1 });
 await migrate(drizzle(migrationClient), config.db.migrationConfig);
@@ -62,6 +64,14 @@ app.post("/api/chirps", async (req, res, next) => {
 app.post("/api/users", async (req, res, next) => {
   try {
     await handlerCreateUser(req, res);
+  } catch (error) {
+    next(error);
+  }
+});
+
+app.post("/api/login", async (req, res, next) => {
+  try {
+    await handlerLogin(req, res);
   } catch (error) {
     next(error);
   }
@@ -162,23 +172,72 @@ async function handlerGetChirpById(req: Request, res: Response) {
 }
 
 async function handlerCreateUser(req: Request, res: Response) {
-  type RequestData = {
+  interface RequestData {
+    password: string;
     email: string;
+  }
+
+  type ResponseData = Omit<RequestData, "password">;
+
+  const hashedPassword = await hashPassword(req.body.password);
+
+  const parsedBody = {
+    hashedPassword: hashedPassword,
+    email: req.body.email,
   };
+
+  if (!parsedBody?.email) {
+    throw new BadRequestError("Email is missing");
+  }
+  if (!parsedBody?.hashedPassword) {
+    throw new BadRequestError("Password is missing");
+  }
+
+  const response = await createUser(parsedBody);
+
+  const responseData: ResponseData = {
+    email: response.email,
+  };
+
+  res.status(201).send(responseData);
+}
+
+async function handlerLogin(req: Request, res: Response) {
+  interface RequestData {
+    password: string;
+    email: string;
+  }
+
+  type ResponseData = Omit<NewUser, "hashedPassword">;
 
   const parsedBody: RequestData = req.body;
 
   if (!parsedBody?.email) {
     throw new BadRequestError("Email is missing");
   }
+  if (!parsedBody?.password) {
+    throw new BadRequestError("Password is missing");
+  }
 
-  const response = await createUser(parsedBody);
-  res.status(201).send({
-    id: response.id,
-    createdAt: response.createdAt,
-    updatedAt: response.updatedAt,
-    email: response.email,
-  });
+  const responseUser = await getUser(parsedBody.email);
+
+  if (!responseUser) throw new BadRequestError("User not found.");
+
+  const passwordVerification = await checkPasswordHash(
+    req.body.password,
+    responseUser.hashedPassword || ""
+  );
+
+  const responseData: ResponseData = {
+    id: responseUser.id,
+    createdAt: responseUser.createdAt,
+    updatedAt: responseUser.updatedAt,
+    email: responseUser.email,
+  };
+
+  if (!passwordVerification)
+    throw new UnauthorizedError("Incorrect email or password");
+  res.status(200).send(responseData);
 }
 
 function middlewareLogResponses(
