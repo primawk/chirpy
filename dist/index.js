@@ -160,6 +160,9 @@ async function handlerCreateUser(req, res) {
     }
     const response = await createUser(parsedBody);
     const responseData = {
+        id: response.id,
+        createdAt: response.createdAt,
+        updatedAt: response.updatedAt,
         email: response.email,
     };
     res.status(201).send(responseData);

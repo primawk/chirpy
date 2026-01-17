@@ -172,12 +172,7 @@ async function handlerGetChirpById(req: Request, res: Response) {
 }
 
 async function handlerCreateUser(req: Request, res: Response) {
-  interface RequestData {
-    password: string;
-    email: string;
-  }
-
-  type ResponseData = Omit<RequestData, "password">;
+  type ResponseData = Omit<NewUser, "password">;
 
   const hashedPassword = await hashPassword(req.body.password);
 
@@ -196,6 +191,9 @@ async function handlerCreateUser(req: Request, res: Response) {
   const response = await createUser(parsedBody);
 
   const responseData: ResponseData = {
+    id: response.id,
+    createdAt: response.createdAt,
+    updatedAt: response.updatedAt,
     email: response.email,
   };
 
