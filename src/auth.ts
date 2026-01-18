@@ -3,6 +3,12 @@ import jwt, { JwtPayload } from "jsonwebtoken";
 
 type payload = Pick<JwtPayload, "iss" | "sub" | "iat" | "exp">;
 
+type ErrorToken = {
+  name: string;
+  message: string;
+  expiredAt: number;
+};
+
 export async function hashPassword(password: string) {
   try {
     return await argon2.hash(password);
@@ -28,4 +34,16 @@ function makeJWT(userId: string, expiresIn: number, secret: string): string {
   };
 
   return jwt.sign(payload, secret);
+}
+
+function validateJWT(tokenString: string, secret: string): string {
+  try {
+    const decoded = jwt.verify(tokenString, secret);
+    const userId = decoded.sub?.toString();
+    if (!userId) throw new Error("user does not exist.");
+    return userId;
+  } catch (error) {
+    const errorToken = error as ErrorToken;
+    throw new Error(errorToken.message);
+  }
 }
