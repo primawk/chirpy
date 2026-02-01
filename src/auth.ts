@@ -25,7 +25,11 @@ export async function checkPasswordHash(password: string, hash: string) {
   }
 }
 
-function makeJWT(userId: string, expiresIn: number, secret: string): string {
+export function makeJWT(
+  userId: string,
+  expiresIn: number,
+  secret: string,
+): string {
   const payload: payload = {
     iss: "chirpy",
     sub: userId,
@@ -36,7 +40,7 @@ function makeJWT(userId: string, expiresIn: number, secret: string): string {
   return jwt.sign(payload, secret);
 }
 
-function validateJWT(tokenString: string, secret: string): string {
+export function validateJWT(tokenString: string, secret: string): string {
   try {
     const decoded = jwt.verify(tokenString, secret);
     const userId = decoded.sub?.toString();
