@@ -94,7 +94,6 @@ export async function handlerCreateChirp(req: Request, res: Response) {
     throw new BadRequestError("Chirp is too long. Max length is 140");
   } else {
     const response = await createChirp(parsedBody);
-    console.log({ response });
     if (response) {
       res.status(201).send(response);
     } else {
