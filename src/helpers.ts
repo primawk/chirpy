@@ -16,3 +16,10 @@ export function envOrForbidden(key: string) {
   if (!value) throw new ForbiddenError("This endpoint is forbidden.");
   return value;
 }
+
+export function envOrSecret(key: string) {
+  const value = process.env[key];
+
+  if (!value) throw new ForbiddenError("Secret is empty.");
+  return value;
+}

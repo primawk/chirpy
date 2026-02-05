@@ -38,3 +38,6 @@ export function validateJWT(tokenString, secret) {
         throw new Error(errorToken.message);
     }
 }
+export function getBearerToken(req) {
+    return req.get("Authorization")?.replace("Bearer ", "") || "";
+}

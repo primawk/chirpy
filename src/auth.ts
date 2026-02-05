@@ -1,5 +1,6 @@
 import * as argon2 from "argon2";
 import jwt, { JwtPayload } from "jsonwebtoken";
+import { Request } from "express";
 
 type payload = Pick<JwtPayload, "iss" | "sub" | "iat" | "exp">;
 
@@ -36,7 +37,6 @@ export function makeJWT(
     iat: Math.floor(Date.now() / 1000),
     exp: Math.floor(Date.now() / 1000) + expiresIn,
   };
-
   return jwt.sign(payload, secret);
 }
 
@@ -50,4 +50,8 @@ export function validateJWT(tokenString: string, secret: string): string {
     const errorToken = error as ErrorToken;
     throw new Error(errorToken.message);
   }
+}
+
+export function getBearerToken(req: Request): string {
+  return req.get("Authorization")?.replace("Bearer ", "") || "";
 }
