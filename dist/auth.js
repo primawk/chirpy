@@ -1,5 +1,6 @@
 import * as argon2 from "argon2";
 import jwt from "jsonwebtoken";
+import { randomBytes } from "node:crypto";
 export async function hashPassword(password) {
     try {
         return await argon2.hash(password);
@@ -40,4 +41,8 @@ export function validateJWT(tokenString, secret) {
 }
 export function getBearerToken(req) {
     return req.get("Authorization")?.replace("Bearer ", "") || "";
+}
+export function makeRereshToken() {
+    const buf = randomBytes(256);
+    console.log(`${buf.length} bytes of random data: ${buf.toString("hex")}`);
 }

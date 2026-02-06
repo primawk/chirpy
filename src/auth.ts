@@ -1,6 +1,7 @@
 import * as argon2 from "argon2";
 import jwt, { JwtPayload } from "jsonwebtoken";
 import { Request } from "express";
+import { randomBytes } from "node:crypto";
 
 type payload = Pick<JwtPayload, "iss" | "sub" | "iat" | "exp">;
 
@@ -54,4 +55,8 @@ export function validateJWT(tokenString: string, secret: string): string {
 
 export function getBearerToken(req: Request): string {
   return req.get("Authorization")?.replace("Bearer ", "") || "";
+}
+
+export function makeRereshToken() {
+  return randomBytes(256).toString("hex");
 }

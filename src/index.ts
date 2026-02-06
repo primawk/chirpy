@@ -15,6 +15,7 @@ import {
   handlerResetUsers,
 } from "./handlers.js";
 import { middlewareLogResponses, middlewareMetricsInc } from "./middlewares.js";
+import { makeRereshToken } from "./auth.js";
 
 const migrationClient = postgres(config.db.url, { max: 1 });
 await migrate(drizzle(migrationClient), config.db.migrationConfig);

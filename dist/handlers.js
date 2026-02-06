@@ -62,7 +62,6 @@ export async function handlerCreateChirp(req, res) {
     }
     else {
         const response = await createChirp(parsedBody);
-        console.log({ response });
         if (response) {
             res.status(201).send(response);
         }
