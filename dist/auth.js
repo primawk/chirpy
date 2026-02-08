@@ -1,6 +1,7 @@
 import * as argon2 from "argon2";
 import jwt from "jsonwebtoken";
 import { randomBytes } from "node:crypto";
+import { UnauthorizedError } from "./errors.js";
 export async function hashPassword(password) {
     try {
         return await argon2.hash(password);
@@ -31,12 +32,12 @@ export function validateJWT(tokenString, secret) {
         const decoded = jwt.verify(tokenString, secret);
         const userId = decoded.sub?.toString();
         if (!userId)
-            throw new Error("user does not exist.");
+            throw new UnauthorizedError("user does not exist.");
         return userId;
     }
     catch (error) {
         const errorToken = error;
-        throw new Error(errorToken.message);
+        throw new UnauthorizedError(errorToken.message);
     }
 }
 export function getBearerToken(req) {

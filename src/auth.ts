@@ -2,6 +2,7 @@ import * as argon2 from "argon2";
 import jwt, { JwtPayload } from "jsonwebtoken";
 import { Request } from "express";
 import { randomBytes } from "node:crypto";
+import { UnauthorizedError } from "./errors.js";
 
 type payload = Pick<JwtPayload, "iss" | "sub" | "iat" | "exp">;
 
@@ -45,11 +46,11 @@ export function validateJWT(tokenString: string, secret: string): string {
   try {
     const decoded = jwt.verify(tokenString, secret);
     const userId = decoded.sub?.toString();
-    if (!userId) throw new Error("user does not exist.");
+    if (!userId) throw new UnauthorizedError("user does not exist.");
     return userId;
   } catch (error) {
     const errorToken = error as ErrorToken;
-    throw new Error(errorToken.message);
+    throw new UnauthorizedError(errorToken.message);
   }
 }
 

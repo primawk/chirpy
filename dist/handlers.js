@@ -55,8 +55,6 @@ export async function handlerResetUsers(req, res) {
 export async function handlerCreateChirp(req, res) {
     const token = getBearerToken(req);
     const isAuthUserId = validateJWT(token, config.api.secret);
-    if (!isAuthUserId)
-        throw new UnauthorizedError("You are unauthorized to post this chirp.");
     const parsedBody = { body: req.body.body, userId: isAuthUserId };
     if (parsedBody?.body?.length > 140) {
         throw new BadRequestError("Chirp is too long. Max length is 140");

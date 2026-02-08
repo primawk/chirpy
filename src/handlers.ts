@@ -91,9 +91,6 @@ export async function handlerCreateChirp(req: Request, res: Response) {
   const token = getBearerToken(req);
   const isAuthUserId = validateJWT(token, config.api.secret);
 
-  if (!isAuthUserId)
-    throw new UnauthorizedError("You are unauthorized to post this chirp.");
-
   const parsedBody: ReqData = { body: req.body.body, userId: isAuthUserId };
 
   if (parsedBody?.body?.length > 140) {
