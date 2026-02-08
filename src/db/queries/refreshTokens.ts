@@ -1,5 +1,5 @@
-import { db } from "..";
-import { RefreshToken, refreshTokens } from "../schema";
+import { db } from "../index.js";
+import { RefreshToken, refreshTokens } from "../schema.js";
 import { eq, sql } from "drizzle-orm";
 
 export async function createRefreshToken(refreshToken: RefreshToken) {
@@ -20,7 +20,7 @@ export async function getUserFromRefreshToken(refreshToken: string) {
 }
 
 export async function updateRevoke(refreshToken: string) {
-   await db
+  await db
     .update(refreshTokens)
     .set({ revokedAt: sql`NOW()` })
     .where(eq(refreshTokens.token, refreshToken));

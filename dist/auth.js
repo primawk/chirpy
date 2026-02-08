@@ -43,6 +43,5 @@ export function getBearerToken(req) {
     return req.get("Authorization")?.replace("Bearer ", "") || "";
 }
 export function makeRereshToken() {
-    const buf = randomBytes(256);
-    console.log(`${buf.length} bytes of random data: ${buf.toString("hex")}`);
+    return randomBytes(256).toString("hex");
 }

@@ -6,6 +6,7 @@ import { drizzle } from "drizzle-orm/postgres-js";
 import {
   errorHandler,
   handlerCreateChirp,
+  handlerCreateRefreshToken,
   handlerCreateUser,
   handlerGetAllChirps,
   handlerGetChirpById,
@@ -13,9 +14,9 @@ import {
   handlerReadiness,
   handlerReqCounter,
   handlerResetUsers,
+  handlerRevokeRefreshToken,
 } from "./handlers.js";
 import { middlewareLogResponses, middlewareMetricsInc } from "./middlewares.js";
-import { makeRereshToken } from "./auth.js";
 
 const migrationClient = postgres(config.db.url, { max: 1 });
 await migrate(drizzle(migrationClient), config.db.migrationConfig);
@@ -69,6 +70,21 @@ app.post("/api/users", async (req, res, next) => {
 app.post("/api/login", async (req, res, next) => {
   try {
     await handlerLogin(req, res);
+  } catch (error) {
+    next(error);
+  }
+});
+
+app.post("/api/refresh", async (req, res, next) => {
+  try {
+    await handlerCreateRefreshToken(req, res);
+  } catch (error) {
+    next(error);
+  }
+});
+app.post("/api/revoke", async (req, res, next) => {
+  try {
+    await handlerRevokeRefreshToken(req, res);
   } catch (error) {
     next(error);
   }

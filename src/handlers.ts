@@ -233,13 +233,13 @@ export async function handlerCreateRefreshToken(req: Request, res: Response) {
   res.status(200).send(responseData);
 }
 
-export async function handlerRevoke(req: Request, res: Response) {
+export async function handlerRevokeRefreshToken(req: Request, res: Response) {
   const responseGetUserId = await getUserFromRefreshToken(getBearerToken(req));
 
   if (!responseGetUserId || responseGetUserId?.revokedAt)
     throw new Error("user not found.");
 
-  const putUpdateRevoke = await updateRevoke(responseGetUserId?.token);
+  await updateRevoke(responseGetUserId?.token);
 
   res.status(204).send("Refresh token has been revoked.");
 }

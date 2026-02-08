@@ -1,9 +1,10 @@
 import { BadRequestError, ForbiddenError, NotFoundError, UnauthorizedError, } from "./errors.js";
 import { envOrForbidden } from "./helpers.js";
 import { createUser, getUser, resetUsers } from "./db/queries/users.js";
-import { checkPasswordHash, getBearerToken, hashPassword, makeJWT, validateJWT, } from "./auth.js";
+import { checkPasswordHash, getBearerToken, hashPassword, makeJWT, makeRereshToken, validateJWT, } from "./auth.js";
 import { config } from "./config.js";
 import { createChirp, getAllChirps, getChirpById, } from "./db/queries/chirps.js";
+import { createRefreshToken, getUserFromRefreshToken, updateRevoke, } from "./db/queries/refreshTokens.js";
 export function errorHandler(err, req, res, next) {
     console.log(`There is an error: ${err}`);
     if (err instanceof NotFoundError) {
@@ -117,21 +118,50 @@ export async function handlerLogin(req, res) {
     if (!parsedBody?.password) {
         throw new BadRequestError("Password is missing");
     }
-    if (!parsedBody?.expiresInSeconds || parsedBody?.expiresInSeconds > 3600) {
-        parsedBody.expiresInSeconds = 3600;
-    }
+    // if (!parsedBody?.expiresInSeconds || parsedBody?.expiresInSeconds > 3600) {
+    //   parsedBody.expiresInSeconds = 3600;
+    // }
     const responseUser = await getUser(parsedBody.email);
     if (!responseUser)
         throw new BadRequestError("User not found.");
     const passwordVerification = await checkPasswordHash(req.body.password, responseUser.hashedPassword || "");
+    const refreshToken = makeRereshToken();
+    const expiresAt = new Date();
+    expiresAt.setDate(expiresAt.getDate() + 60);
+    const refreshTokenPayload = {
+        userId: responseUser.id,
+        token: refreshToken,
+        expiresAt: expiresAt,
+        revokedAt: null,
+    };
+    const postRefreshToken = await createRefreshToken(refreshTokenPayload);
+    if (!postRefreshToken)
+        throw new Error("There is something wrong when posting the refresh token.");
     const responseData = {
         id: responseUser.id,
         createdAt: responseUser.createdAt,
         updatedAt: responseUser.updatedAt,
         email: responseUser.email,
-        token: makeJWT(responseUser.id, parsedBody?.expiresInSeconds, config.api.secret),
+        token: makeJWT(responseUser.id, 3600, config.api.secret),
+        refreshToken: postRefreshToken?.token,
     };
     if (!passwordVerification)
         throw new UnauthorizedError("Incorrect email or password");
     res.status(200).send(responseData);
+}
+export async function handlerCreateRefreshToken(req, res) {
+    const responseGetUserId = await getUserFromRefreshToken(getBearerToken(req));
+    const responseData = {
+        token: makeJWT(responseGetUserId.userId, 3600, config.api.secret),
+    };
+    if (!responseGetUserId || responseGetUserId?.revokedAt)
+        throw new UnauthorizedError("Unauthorized user.");
+    res.status(200).send(responseData);
+}
+export async function handlerRevokeRefreshToken(req, res) {
+    const responseGetUserId = await getUserFromRefreshToken(getBearerToken(req));
+    if (!responseGetUserId || responseGetUserId?.revokedAt)
+        throw new Error("user not found.");
+    await updateRevoke(responseGetUserId?.token);
+    res.status(204).send("Refresh token has been revoked.");
 }
