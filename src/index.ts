@@ -8,6 +8,7 @@ import {
   handlerCreateChirp,
   handlerCreateRefreshToken,
   handlerCreateUser,
+  handlerDeleteChirp,
   handlerGetAllChirps,
   handlerGetChirpById,
   handlerLogin,
@@ -15,6 +16,7 @@ import {
   handlerReqCounter,
   handlerResetUsers,
   handlerRevokeRefreshToken,
+  handlerUpdateUser,
 } from "./handlers.js";
 import { middlewareLogResponses, middlewareMetricsInc } from "./middlewares.js";
 
@@ -85,6 +87,20 @@ app.post("/api/refresh", async (req, res, next) => {
 app.post("/api/revoke", async (req, res, next) => {
   try {
     await handlerRevokeRefreshToken(req, res);
+  } catch (error) {
+    next(error);
+  }
+});
+app.put("/api/users", async (req, res, next) => {
+  try {
+    await handlerUpdateUser(req, res);
+  } catch (error) {
+    next(error);
+  }
+});
+app.delete("/api/chirps/:chirpId", async (req, res, next) => {
+  try {
+    await handlerDeleteChirp(req, res);
   } catch (error) {
     next(error);
   }

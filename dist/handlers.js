@@ -1,9 +1,9 @@
 import { BadRequestError, ForbiddenError, NotFoundError, UnauthorizedError, } from "./errors.js";
 import { envOrForbidden } from "./helpers.js";
-import { createUser, getUser, resetUsers } from "./db/queries/users.js";
+import { createUser, getUser, resetUsers, updateUser, } from "./db/queries/users.js";
 import { checkPasswordHash, getBearerToken, hashPassword, makeJWT, makeRereshToken, validateJWT, } from "./auth.js";
 import { config } from "./config.js";
-import { createChirp, getAllChirps, getChirpById, } from "./db/queries/chirps.js";
+import { createChirp, deleteChirp, getAllChirps, getChirpById, getChirpByUserId, } from "./db/queries/chirps.js";
 import { createRefreshToken, getUserFromRefreshToken, updateRevoke, } from "./db/queries/refreshTokens.js";
 export function errorHandler(err, req, res, next) {
     console.log(`There is an error: ${err}`);
@@ -53,8 +53,8 @@ export async function handlerResetUsers(req, res) {
     res.status(200).send("Users have been reset.");
 }
 export async function handlerCreateChirp(req, res) {
-    const token = getBearerToken(req);
-    const isAuthUserId = validateJWT(token, config.api.secret);
+    const accessToken = getBearerToken(req);
+    const isAuthUserId = validateJWT(accessToken, config.api.secret);
     const parsedBody = { body: req.body.body, userId: isAuthUserId };
     if (parsedBody?.body?.length > 140) {
         throw new BadRequestError("Chirp is too long. Max length is 140");
@@ -116,9 +116,6 @@ export async function handlerLogin(req, res) {
     if (!parsedBody?.password) {
         throw new BadRequestError("Password is missing");
     }
-    // if (!parsedBody?.expiresInSeconds || parsedBody?.expiresInSeconds > 3600) {
-    //   parsedBody.expiresInSeconds = 3600;
-    // }
     const responseUser = await getUser(parsedBody.email);
     if (!responseUser)
         throw new BadRequestError("User not found.");
@@ -162,4 +159,36 @@ export async function handlerRevokeRefreshToken(req, res) {
         throw new Error("user not found.");
     await updateRevoke(responseGetUserId?.token);
     res.status(204).send("Refresh token has been revoked.");
+}
+export async function handlerUpdateUser(req, res) {
+    const accessToken = getBearerToken(req);
+    const isAuthUserId = validateJWT(accessToken, config.api.secret);
+    const parsedBody = req.body;
+    if (!parsedBody?.email) {
+        throw new BadRequestError("Email is missing");
+    }
+    if (!parsedBody?.password) {
+        throw new BadRequestError("Password is missing");
+    }
+    const hashedPassword = await hashPassword(parsedBody.password);
+    const response = await updateUser(isAuthUserId, parsedBody.email, hashedPassword);
+    const responseData = {
+        id: response.id,
+        email: response.email,
+    };
+    res.status(200).send(responseData);
+}
+export async function handlerDeleteChirp(req, res) {
+    const accessToken = getBearerToken(req);
+    const isAuthUserId = validateJWT(accessToken, config.api.secret);
+    const responseChirp = await getChirpByUserId(isAuthUserId);
+    if (responseChirp?.id !== req.params.chirpId)
+        throw new ForbiddenError("You are forbidden to delete this chirp.");
+    try {
+        await deleteChirp(req.params.chirpId);
+    }
+    catch (error) {
+        throw new NotFoundError("Chirp is not found.");
+    }
+    res.status(204).send("Chirp is successfully deleted.");
 }

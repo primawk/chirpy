@@ -6,7 +6,12 @@ import {
   UnauthorizedError,
 } from "./errors.js";
 import { envOrForbidden } from "./helpers.js";
-import { createUser, getUser, resetUsers } from "./db/queries/users.js";
+import {
+  createUser,
+  getUser,
+  resetUsers,
+  updateUser,
+} from "./db/queries/users.js";
 import {
   checkPasswordHash,
   getBearerToken,
@@ -18,8 +23,10 @@ import {
 import { config } from "./config.js";
 import {
   createChirp,
+  deleteChirp,
   getAllChirps,
   getChirpById,
+  getChirpByUserId,
 } from "./db/queries/chirps.js";
 import { NewUser, RefreshToken } from "./db/schema.js";
 import {
@@ -27,6 +34,7 @@ import {
   getUserFromRefreshToken,
   updateRevoke,
 } from "./db/queries/refreshTokens.js";
+import { get } from "node:http";
 
 export function errorHandler(
   err: Error,
@@ -88,8 +96,8 @@ export async function handlerCreateChirp(req: Request, res: Response) {
     userId: string;
   };
 
-  const token = getBearerToken(req);
-  const isAuthUserId = validateJWT(token, config.api.secret);
+  const accessToken = getBearerToken(req);
+  const isAuthUserId = validateJWT(accessToken, config.api.secret);
 
   const parsedBody: ReqData = { body: req.body.body, userId: isAuthUserId };
 
@@ -171,9 +179,6 @@ export async function handlerLogin(req: Request, res: Response) {
   if (!parsedBody?.password) {
     throw new BadRequestError("Password is missing");
   }
-  // if (!parsedBody?.expiresInSeconds || parsedBody?.expiresInSeconds > 3600) {
-  //   parsedBody.expiresInSeconds = 3600;
-  // }
 
   const responseUser = await getUser(parsedBody.email);
 
@@ -239,4 +244,58 @@ export async function handlerRevokeRefreshToken(req: Request, res: Response) {
   await updateRevoke(responseGetUserId?.token);
 
   res.status(204).send("Refresh token has been revoked.");
+}
+
+export async function handlerUpdateUser(req: Request, res: Response) {
+  type RequestData = {
+    password: string;
+    email: string;
+  };
+
+  type ResponseData = Omit<NewUser, "hashedPassword">;
+
+  const accessToken = getBearerToken(req);
+  const isAuthUserId = validateJWT(accessToken, config.api.secret);
+
+  const parsedBody: RequestData = req.body;
+
+  if (!parsedBody?.email) {
+    throw new BadRequestError("Email is missing");
+  }
+  if (!parsedBody?.password) {
+    throw new BadRequestError("Password is missing");
+  }
+
+  const hashedPassword = await hashPassword(parsedBody.password);
+
+  const response = await updateUser(
+    isAuthUserId,
+    parsedBody.email,
+    hashedPassword,
+  );
+
+  const responseData: ResponseData = {
+    id: response.id,
+    email: response.email,
+  };
+
+  res.status(200).send(responseData);
+}
+
+export async function handlerDeleteChirp(req: Request, res: Response) {
+  const accessToken = getBearerToken(req);
+  const isAuthUserId = validateJWT(accessToken, config.api.secret);
+
+  const responseChirp = await getChirpByUserId(isAuthUserId);
+
+  if (responseChirp?.id !== req.params.chirpId)
+    throw new ForbiddenError("You are forbidden to delete this chirp.");
+
+  try {
+    await deleteChirp(req.params.chirpId);
+  } catch (error) {
+    throw new NotFoundError("Chirp is not found.");
+  }
+
+  res.status(204).send("Chirp is successfully deleted.");
 }

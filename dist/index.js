@@ -3,7 +3,7 @@ import { config } from "./config.js";
 import postgres from "postgres";
 import { migrate } from "drizzle-orm/postgres-js/migrator";
 import { drizzle } from "drizzle-orm/postgres-js";
-import { errorHandler, handlerCreateChirp, handlerCreateRefreshToken, handlerCreateUser, handlerGetAllChirps, handlerGetChirpById, handlerLogin, handlerReadiness, handlerReqCounter, handlerResetUsers, handlerRevokeRefreshToken, } from "./handlers.js";
+import { errorHandler, handlerCreateChirp, handlerCreateRefreshToken, handlerCreateUser, handlerDeleteChirp, handlerGetAllChirps, handlerGetChirpById, handlerLogin, handlerReadiness, handlerReqCounter, handlerResetUsers, handlerRevokeRefreshToken, handlerUpdateUser, } from "./handlers.js";
 import { middlewareLogResponses, middlewareMetricsInc } from "./middlewares.js";
 const migrationClient = postgres(config.db.url, { max: 1 });
 await migrate(drizzle(migrationClient), config.db.migrationConfig);
@@ -73,6 +73,22 @@ app.post("/api/refresh", async (req, res, next) => {
 app.post("/api/revoke", async (req, res, next) => {
     try {
         await handlerRevokeRefreshToken(req, res);
+    }
+    catch (error) {
+        next(error);
+    }
+});
+app.put("/api/users", async (req, res, next) => {
+    try {
+        await handlerUpdateUser(req, res);
+    }
+    catch (error) {
+        next(error);
+    }
+});
+app.delete("/api/chirps/:chirpId", async (req, res, next) => {
+    try {
+        await handlerDeleteChirp(req, res);
     }
     catch (error) {
         next(error);
