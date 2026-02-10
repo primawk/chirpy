@@ -11,6 +11,7 @@ import {
   getUser,
   resetUsers,
   updateUser,
+  upgradeUser,
 } from "./db/queries/users.js";
 import {
   checkPasswordHash,
@@ -298,4 +299,19 @@ export async function handlerDeleteChirp(req: Request, res: Response) {
   }
 
   res.status(204).send("Chirp is successfully deleted.");
+}
+
+export async function handlerUpgradeUser(req: Request, res: Response) {
+  type RequestData = {
+    event: string;
+    data: {
+      userId: string;
+    };
+  };
+  const parsedBody: RequestData = req.body;
+  if (parsedBody?.event === "user.upgraded") {
+    const response = await upgradeUser(parsedBody?.data?.userId);
+  }
+
+  res.status(204).send("user status is not upgraded.");
 }
