@@ -17,6 +17,7 @@ import {
   handlerResetUsers,
   handlerRevokeRefreshToken,
   handlerUpdateUser,
+  handlerUpgradeUser,
 } from "./handlers.js";
 import { middlewareLogResponses, middlewareMetricsInc } from "./middlewares.js";
 
@@ -101,6 +102,20 @@ app.put("/api/users", async (req, res, next) => {
 app.delete("/api/chirps/:chirpId", async (req, res, next) => {
   try {
     await handlerDeleteChirp(req, res);
+  } catch (error) {
+    next(error);
+  }
+});
+app.post("/api/chirps/:chirpId", async (req, res, next) => {
+  try {
+    await handlerDeleteChirp(req, res);
+  } catch (error) {
+    next(error);
+  }
+});
+app.post("/api/polka/webhooks", async (req, res, next) => {
+  try {
+    await handlerUpgradeUser(req, res);
   } catch (error) {
     next(error);
   }

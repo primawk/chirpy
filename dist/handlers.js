@@ -1,6 +1,6 @@
 import { BadRequestError, ForbiddenError, NotFoundError, UnauthorizedError, } from "./errors.js";
 import { envOrForbidden } from "./helpers.js";
-import { createUser, getUser, resetUsers, updateUser, } from "./db/queries/users.js";
+import { createUser, getUser, resetUsers, updateUser, upgradeUser, } from "./db/queries/users.js";
 import { checkPasswordHash, getBearerToken, hashPassword, makeJWT, makeRereshToken, validateJWT, } from "./auth.js";
 import { config } from "./config.js";
 import { createChirp, deleteChirp, getAllChirps, getChirpById, getChirpByUserId, } from "./db/queries/chirps.js";
@@ -105,6 +105,7 @@ export async function handlerCreateUser(req, res) {
         createdAt: response.createdAt,
         updatedAt: response.updatedAt,
         email: response.email,
+        isChirpyRed: response.isChirpyRed,
     };
     res.status(201).send(responseData);
 }
@@ -138,6 +139,7 @@ export async function handlerLogin(req, res) {
         updatedAt: responseUser.updatedAt,
         email: responseUser.email,
         token: makeJWT(responseUser.id, 3600, config.api.secret),
+        isChirpyRed: responseUser.isChirpyRed,
         refreshToken: postRefreshToken?.token,
     };
     if (!passwordVerification)
@@ -175,6 +177,7 @@ export async function handlerUpdateUser(req, res) {
     const responseData = {
         id: response.id,
         email: response.email,
+        isChirpyRed: response.isChirpyRed,
     };
     res.status(200).send(responseData);
 }
@@ -191,4 +194,14 @@ export async function handlerDeleteChirp(req, res) {
         throw new NotFoundError("Chirp is not found.");
     }
     res.status(204).send("Chirp is successfully deleted.");
+}
+export async function handlerUpgradeUser(req, res) {
+    const parsedBody = req.body;
+    if (parsedBody?.event === "user.upgraded") {
+        const response = await upgradeUser(parsedBody?.data?.userId);
+        if (!response)
+            throw new NotFoundError("failed to upgrade the user.");
+        res.status(204).send("test");
+    }
+    res.status(204).send("test");
 }

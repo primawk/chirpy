@@ -156,6 +156,7 @@ export async function handlerCreateUser(req: Request, res: Response) {
     createdAt: response.createdAt,
     updatedAt: response.updatedAt,
     email: response.email,
+    isChirpyRed: response.isChirpyRed,
   };
 
   res.status(201).send(responseData);
@@ -212,6 +213,7 @@ export async function handlerLogin(req: Request, res: Response) {
     updatedAt: responseUser.updatedAt,
     email: responseUser.email,
     token: makeJWT(responseUser.id, 3600, config.api.secret),
+    isChirpyRed: responseUser.isChirpyRed,
     refreshToken: postRefreshToken?.token,
   };
 
@@ -278,6 +280,7 @@ export async function handlerUpdateUser(req: Request, res: Response) {
   const responseData: ResponseData = {
     id: response.id,
     email: response.email,
+    isChirpyRed: response.isChirpyRed,
   };
 
   res.status(200).send(responseData);
@@ -309,9 +312,11 @@ export async function handlerUpgradeUser(req: Request, res: Response) {
     };
   };
   const parsedBody: RequestData = req.body;
+
   if (parsedBody?.event === "user.upgraded") {
     const response = await upgradeUser(parsedBody?.data?.userId);
+    if (!response) throw new NotFoundError("failed to upgrade the user.");
+    res.status(204).send("test");
   }
-
-  res.status(204).send("user status is not upgraded.");
+  res.status(204).send("test");
 }

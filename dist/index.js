@@ -3,7 +3,7 @@ import { config } from "./config.js";
 import postgres from "postgres";
 import { migrate } from "drizzle-orm/postgres-js/migrator";
 import { drizzle } from "drizzle-orm/postgres-js";
-import { errorHandler, handlerCreateChirp, handlerCreateRefreshToken, handlerCreateUser, handlerDeleteChirp, handlerGetAllChirps, handlerGetChirpById, handlerLogin, handlerReadiness, handlerReqCounter, handlerResetUsers, handlerRevokeRefreshToken, handlerUpdateUser, } from "./handlers.js";
+import { errorHandler, handlerCreateChirp, handlerCreateRefreshToken, handlerCreateUser, handlerDeleteChirp, handlerGetAllChirps, handlerGetChirpById, handlerLogin, handlerReadiness, handlerReqCounter, handlerResetUsers, handlerRevokeRefreshToken, handlerUpdateUser, handlerUpgradeUser, } from "./handlers.js";
 import { middlewareLogResponses, middlewareMetricsInc } from "./middlewares.js";
 const migrationClient = postgres(config.db.url, { max: 1 });
 await migrate(drizzle(migrationClient), config.db.migrationConfig);
@@ -89,6 +89,22 @@ app.put("/api/users", async (req, res, next) => {
 app.delete("/api/chirps/:chirpId", async (req, res, next) => {
     try {
         await handlerDeleteChirp(req, res);
+    }
+    catch (error) {
+        next(error);
+    }
+});
+app.post("/api/chirps/:chirpId", async (req, res, next) => {
+    try {
+        await handlerDeleteChirp(req, res);
+    }
+    catch (error) {
+        next(error);
+    }
+});
+app.post("/api/polka/webhooks", async (req, res, next) => {
+    try {
+        await handlerUpgradeUser(req, res);
     }
     catch (error) {
         next(error);
