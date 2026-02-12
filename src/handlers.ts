@@ -316,7 +316,8 @@ export async function handlerUpgradeUser(req: Request, res: Response) {
   if (parsedBody?.event === "user.upgraded") {
     const response = await upgradeUser(parsedBody?.data?.userId);
     if (!response) throw new NotFoundError("failed to upgrade the user.");
-    res.status(204).send("test");
+    res.status(204).send("user upgraded.");
+  } else {
+    res.status(204).send("user is not eligible.");
   }
-  res.status(204).send("test");
 }
