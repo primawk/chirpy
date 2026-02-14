@@ -1,8 +1,9 @@
-import { envOrSecret, envOrThrow } from "./helpers.js";
+import { envOrPolka, envOrSecret, envOrThrow } from "./helpers.js";
 import { loadEnvFile } from "node:process";
 loadEnvFile();
 const databaseURL = envOrThrow("DB_URL");
 const secret = envOrSecret("SECRET");
+const polkaSecret = envOrPolka("POLKA_KEY");
 const migrationConfig = {
     migrationsFolder: "src/db",
 };
@@ -11,6 +12,7 @@ export const config = {
         fileserverHits: 0,
         dbURL: databaseURL,
         secret: secret,
+        polkaSecret: polkaSecret,
     },
     db: {
         url: databaseURL,

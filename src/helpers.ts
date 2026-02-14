@@ -1,4 +1,4 @@
-import { ForbiddenError } from "./errors.js";
+import { ForbiddenError, UnauthorizedError } from "./errors.js";
 import { loadEnvFile } from "node:process";
 
 loadEnvFile();
@@ -21,5 +21,12 @@ export function envOrSecret(key: string) {
   const value = process.env[key];
 
   if (!value) throw new ForbiddenError("Secret is empty.");
+  return value;
+}
+
+export function envOrPolka(key: string) {
+  const value = process.env[key];
+
+  if (!value) throw new UnauthorizedError("You are not authorized.");
   return value;
 }

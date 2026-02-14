@@ -15,6 +15,7 @@ import {
 } from "./db/queries/users.js";
 import {
   checkPasswordHash,
+  getAPIKey,
   getBearerToken,
   hashPassword,
   makeJWT,
@@ -311,6 +312,11 @@ export async function handlerUpgradeUser(req: Request, res: Response) {
       userId: string;
     };
   };
+
+  const apiKey = getAPIKey(req);
+  if (apiKey !== config?.api?.polkaSecret)
+    throw new UnauthorizedError("You are not authorized.");
+
   const parsedBody: RequestData = req.body;
 
   if (parsedBody?.event === "user.upgraded") {

@@ -43,6 +43,9 @@ export function validateJWT(tokenString, secret) {
 export function getBearerToken(req) {
     return req.get("Authorization")?.replace("Bearer ", "") || "";
 }
+export function getAPIKey(req) {
+    return req.get("Authorization")?.replace("ApiKey ", "") || "";
+}
 export function makeRereshToken() {
     return randomBytes(256).toString("hex");
 }

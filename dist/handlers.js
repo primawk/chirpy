@@ -1,7 +1,7 @@
 import { BadRequestError, ForbiddenError, NotFoundError, UnauthorizedError, } from "./errors.js";
 import { envOrForbidden } from "./helpers.js";
 import { createUser, getUser, resetUsers, updateUser, upgradeUser, } from "./db/queries/users.js";
-import { checkPasswordHash, getBearerToken, hashPassword, makeJWT, makeRereshToken, validateJWT, } from "./auth.js";
+import { checkPasswordHash, getAPIKey, getBearerToken, hashPassword, makeJWT, makeRereshToken, validateJWT, } from "./auth.js";
 import { config } from "./config.js";
 import { createChirp, deleteChirp, getAllChirps, getChirpById, getChirpByUserId, } from "./db/queries/chirps.js";
 import { createRefreshToken, getUserFromRefreshToken, updateRevoke, } from "./db/queries/refreshTokens.js";
@@ -196,6 +196,9 @@ export async function handlerDeleteChirp(req, res) {
     res.status(204).send("Chirp is successfully deleted.");
 }
 export async function handlerUpgradeUser(req, res) {
+    const apiKey = getAPIKey(req);
+    if (apiKey !== config?.api?.polkaSecret)
+        throw new UnauthorizedError("You are not authorized.");
     const parsedBody = req.body;
     if (parsedBody?.event === "user.upgraded") {
         const response = await upgradeUser(parsedBody?.data?.userId);
