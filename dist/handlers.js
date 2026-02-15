@@ -70,7 +70,11 @@ export async function handlerCreateChirp(req, res) {
     }
 }
 export async function handlerGetAllChirps(req, res) {
-    const response = await getAllChirps();
+    let authorId = "";
+    let authorIdQuery = req.query.authorId;
+    if (typeof authorIdQuery === "string")
+        authorId = authorIdQuery;
+    const response = await getAllChirps(authorId);
     if (response) {
         res.status(200).send(response);
     }

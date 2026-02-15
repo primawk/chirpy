@@ -11,8 +11,10 @@ export async function createChirp(chirp: NewChirp) {
   return result;
 }
 
-export async function getAllChirps() {
-  const results = await db.select().from(chirps);
+export async function getAllChirps(authorId?: string) {
+  const results = authorId
+    ? await db.select().from(chirps).where(eq(chirps.userId, authorId))
+    : await db.select().from(chirps);
   return results;
 }
 
